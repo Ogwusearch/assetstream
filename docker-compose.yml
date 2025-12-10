@@ -1,0 +1,48 @@
+
+
+services:
+  backend:
+    container_name: assetstream-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - DATABASE_URL=sqlite:./backend/storage/assetstream.db
+      - JWT_SECRET=supersecret123
+      - UPLOAD_PATH=/app/storage
+    volumes:
+      - ./backend/storage:/app/storage
+    command: >
+      sh -c "npm install && npm run start"
+    networks:
+      - assetstream-network
+
+  frontend:
+    container_name: assetstream-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - assetstream-network
+    command: >
+      sh -c "npm install && npm run dev -- --host 0.0.0.0"
+
+  sqlite:
+    container_name: assetstream-sqlite
+    image: nouchka/sqlite3
+    volumes:
+      - ./backend/storage:/data
+    networks:
+      - assetstream-network
+    command: tail -f /dev/null # keep the container running
+
+networks:
+  assetstream-network:
+    driver: bridge
